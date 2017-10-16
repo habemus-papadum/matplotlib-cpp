@@ -4,6 +4,8 @@ matplotlib-cpp
 Welcome to matplotlib-cpp, possibly the simplest C++ plotting library.
 It is built to resemble the plotting API used by Matlab and matplotlib.
 
+*This version is for anaconda3 on MacOS. You need to install anaconda python3 at
+your $(HOME)/anaconda3 directory.*
 
 
 Usage
