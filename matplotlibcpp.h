@@ -77,7 +77,7 @@ namespace matplotlibcpp {
 				Py_Initialize();
 
 #ifndef WITHOUT_NUMPY
-				import_array(); // initialize numpy C-API
+				_import_array(); // initialize numpy C-API
 #endif
 
 				PyObject* matplotlibname = PyString_FromString("matplotlib");
