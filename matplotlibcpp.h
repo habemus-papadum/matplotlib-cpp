@@ -1,5 +1,7 @@
 #pragma once
 
+#pragma clang system_header
+
 #include <algorithm>
 #include <iostream>
 #include <map>
@@ -37,6 +39,7 @@ struct _interpreter {
     PyObject *s_python_function_plot;
     PyObject *s_python_function_fill_between;
     PyObject *s_python_function_hist;
+    PyObject *s_python_function_hist2d;
     PyObject *s_python_function_subplot;
     PyObject *s_python_function_legend;
     PyObject *s_python_function_xlim;
@@ -119,6 +122,7 @@ struct _interpreter {
         s_python_function_plot = PyObject_GetAttrString(pymod, "plot");
         s_python_function_fill_between =
             PyObject_GetAttrString(pymod, "fill_between");
+        s_python_function_hist2d = PyObject_GetAttrString(pymod, "hist2d");
         s_python_function_hist = PyObject_GetAttrString(pymod, "hist");
         s_python_function_subplot = PyObject_GetAttrString(pymod, "subplot");
         s_python_function_legend = PyObject_GetAttrString(pymod, "legend");
@@ -345,6 +349,31 @@ bool fill_between(const std::vector<Numeric> &x, const std::vector<Numeric> &y1,
         kwargs);
 
     Py_DECREF(args);
+    Py_DECREF(kwargs);
+    if (res)
+        Py_DECREF(res);
+
+    return res;
+}
+
+template <typename Numeric>
+bool hist2d(const std::vector<Numeric> &x, const std::vector<Numeric> &y, long bins = 10,
+          std::string color = "b", double alpha = 1.0, long normed = 1) {
+
+    PyObject *xarray = get_array(x);
+    PyObject *yarray = get_array(y);
+
+    PyObject *kwargs = PyDict_New();
+    PyDict_SetItemString(kwargs, "bins", PyLong_FromLong(bins));
+    PyObject *plot_args = PyTuple_New(2);
+
+    PyTuple_SetItem(plot_args, 0, xarray);
+    PyTuple_SetItem(plot_args, 1, yarray);
+
+    PyObject *res = PyObject_Call(
+        detail::_interpreter::get().s_python_function_hist2d, plot_args, kwargs);
+
+    Py_DECREF(plot_args);
     Py_DECREF(kwargs);
     if (res)
         Py_DECREF(res);
