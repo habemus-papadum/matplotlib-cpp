@@ -67,10 +67,10 @@ struct _interpreter {
         return ctx;
     }
 
-  private:
+  public:
     _interpreter() {
 
-    // optional but recommended
+// optional but recommended
 #if PY_MAJOR_VERSION >= 3
         wchar_t name[] = L"plotting";
 #else
@@ -253,7 +253,8 @@ template <> struct select_npy_type<uint64_t> {
 };
 
 template <typename Numeric> PyObject *get_array(const std::vector<Numeric> &v) {
-    detail::_interpreter::get(); // interpreter needs to be initialized for the
+    detail::_interpreter::get(); // interpreter needs to be initialized for
+                                 // the
                                  // numpy commands to work
     NPY_TYPES type = select_npy_type<Numeric>::type;
     if (type == NPY_NOTYPE) {
@@ -357,21 +358,24 @@ bool fill_between(const std::vector<Numeric> &x, const std::vector<Numeric> &y1,
 }
 
 template <typename Numeric>
-bool hist2d(const std::vector<Numeric> &x, const std::vector<Numeric> &y, long bins = 10,
-          std::string color = "b", double alpha = 1.0, long normed = 1) {
+bool hist2d(const std::vector<Numeric> &x, const std::vector<Numeric> &y,
+            long bins = 10, std::string color = "b", double alpha = 1.0,
+            long normed = 1) {
 
     PyObject *xarray = get_array(x);
     PyObject *yarray = get_array(y);
 
     PyObject *kwargs = PyDict_New();
     PyDict_SetItemString(kwargs, "bins", PyLong_FromLong(bins));
+    PyDict_SetItemString(kwargs, "normed", Py_True);
     PyObject *plot_args = PyTuple_New(2);
 
     PyTuple_SetItem(plot_args, 0, xarray);
     PyTuple_SetItem(plot_args, 1, yarray);
 
-    PyObject *res = PyObject_Call(
-        detail::_interpreter::get().s_python_function_hist2d, plot_args, kwargs);
+    PyObject *res =
+        PyObject_Call(detail::_interpreter::get().s_python_function_hist2d,
+                      plot_args, kwargs);
 
     Py_DECREF(plot_args);
     Py_DECREF(kwargs);
@@ -388,9 +392,9 @@ bool hist(const std::vector<Numeric> &y, long bins = 10,
     PyObject *yarray = get_array(y);
 
     PyObject *kwargs = PyDict_New();
-    PyDict_SetItemString(kwargs, "bins", PyLong_FromLong(bins));
+    PyDict_SetItemString(kwargs, "bins", PyLong_FromLong(200));
     PyDict_SetItemString(kwargs, "color", PyString_FromString(color.c_str()));
-    PyDict_SetItemString(kwargs, "alpha", PyFloat_FromDouble(alpha));
+    PyDict_SetItemString(kwargs, "normed", Py_True);
 
     PyObject *plot_args = PyTuple_New(1);
 
@@ -796,7 +800,8 @@ inline void clf() {
     Py_DECREF(res);
 }
 
-// Actually, is there any reason not to call this automatically for every plot?
+// Actually, is there any reason not to call this automatically for every
+// plot?
 inline void tight_layout() {
     PyObject *res = PyObject_CallObject(
         detail::_interpreter::get().s_python_function_tight_layout,
@@ -903,7 +908,8 @@ template <> struct plot_impl<std::true_type> {
             return true;
 
         // We could use additional meta-programming to deduce the correct
-        // element type of y, but all values have to be convertible to double
+        // element type of y, but all values have to be convertible to
+        // double
         // anyways
         std::vector<double> y;
         for (auto x : ticks)
@@ -924,7 +930,8 @@ bool plot(const A &a, const B &b, const std::string &format, Args... args) {
 }
 
 /*
- * This group of plot() functions is needed to support initializer lists, i.e.
+ * This group of plot() functions is needed to support initializer lists,
+ * i.e.
  * calling plot( {1,2,3,4} )
  */
 bool plot(const std::vector<double> &x, const std::vector<double> &y,
@@ -947,5 +954,131 @@ bool named_plot(const std::string &name, const std::vector<double> &x,
 }
 
 #endif
+
+class Window {
+    struct detail::_interpreter inpy;
+
+  public:
+    template <typename Numeric>
+    bool hist2d(const std::vector<Numeric> &x, const std::vector<Numeric> &y,
+                long bins = 10, std::string color = "b", double alpha = 1.0,
+                long normed = 1) {
+
+        PyObject *xarray = get_array(x);
+        PyObject *yarray = get_array(y);
+
+        PyObject *kwargs = PyDict_New();
+        PyDict_SetItemString(kwargs, "bins", PyLong_FromLong(bins));
+        PyDict_SetItemString(kwargs, "normed", Py_True);
+        PyObject *plot_args = PyTuple_New(2);
+
+        PyTuple_SetItem(plot_args, 0, xarray);
+        PyTuple_SetItem(plot_args, 1, yarray);
+
+        PyObject *res =
+            PyObject_Call(inpy.s_python_function_hist2d, plot_args, kwargs);
+
+        Py_DECREF(plot_args);
+        Py_DECREF(kwargs);
+        if (res)
+            Py_DECREF(res);
+
+        return res;
+    }
+
+    template <typename Numeric>
+    bool hist(const std::vector<Numeric> &y, long bins = 10,
+              std::string color = "b", double alpha = 1.0) {
+
+        PyObject *yarray = get_array(y);
+
+        PyObject *kwargs = PyDict_New();
+        PyDict_SetItemString(kwargs, "bins", PyLong_FromLong(200));
+        PyDict_SetItemString(kwargs, "color",
+                             PyString_FromString(color.c_str()));
+        PyDict_SetItemString(kwargs, "normed", Py_True);
+
+        PyObject *plot_args = PyTuple_New(1);
+
+        PyTuple_SetItem(plot_args, 0, yarray);
+
+        PyObject *res =
+            PyObject_Call(inpy.s_python_function_hist, plot_args, kwargs);
+
+        Py_DECREF(plot_args);
+        Py_DECREF(kwargs);
+        if (res)
+            Py_DECREF(res);
+
+        return res;
+    }
+
+    template <typename NumericX, typename NumericY>
+    bool plot(const std::vector<NumericX> &x, const std::vector<NumericY> &y,
+              const std::string &s = "") {
+        assert(x.size() == y.size());
+
+        PyObject *xarray = get_array(x);
+        PyObject *yarray = get_array(y);
+
+        PyObject *pystring = PyString_FromString(s.c_str());
+
+        PyObject *plot_args = PyTuple_New(3);
+        PyTuple_SetItem(plot_args, 0, xarray);
+        PyTuple_SetItem(plot_args, 1, yarray);
+        PyTuple_SetItem(plot_args, 2, pystring);
+
+        PyObject *res =
+            PyObject_CallObject(inpy.s_python_function_plot, plot_args);
+
+        Py_DECREF(plot_args);
+        if (res)
+            Py_DECREF(res);
+
+        return res;
+    }
+
+    template <typename Numeric> void pause(Numeric interval) {
+        PyObject *args = PyTuple_New(1);
+        PyTuple_SetItem(args, 0, PyFloat_FromDouble(interval));
+
+        PyObject *res = PyObject_CallObject(inpy.s_python_function_pause, args);
+        if (!res)
+            throw std::runtime_error("Call to pause() failed.");
+
+        Py_DECREF(args);
+        Py_DECREF(res);
+    }
+
+    inline void subplot(long nrows, long ncols, long plot_number) {
+        // construct positional args
+        PyObject *args = PyTuple_New(3);
+        PyTuple_SetItem(args, 0, PyFloat_FromDouble(nrows));
+        PyTuple_SetItem(args, 1, PyFloat_FromDouble(ncols));
+        PyTuple_SetItem(args, 2, PyFloat_FromDouble(plot_number));
+
+        PyObject *res = PyObject_CallObject(
+            inpy.s_python_function_subplot, args);
+        if (!res)
+            throw std::runtime_error("Call to subplot() failed.");
+
+        Py_DECREF(args);
+        Py_DECREF(res);
+    }
+
+    inline void save(const std::string &filename) {
+        PyObject *pyfilename = PyString_FromString(filename.c_str());
+
+        PyObject *args = PyTuple_New(1);
+        PyTuple_SetItem(args, 0, pyfilename);
+
+        PyObject *res = PyObject_CallObject(inpy.s_python_function_save, args);
+        if (!res)
+            throw std::runtime_error("Call to save() failed.");
+
+        Py_DECREF(args);
+        Py_DECREF(res);
+    }
+};
 
 } // namespace matplotlibcpp

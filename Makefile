@@ -1,7 +1,7 @@
 ANACONDA3 := $(HOME)/anaconda3
-FLAGS:=$(shell $(ANACONDA3)/bin/python3-config --cflags --ldflags) -I$(ANACONDA3)/lib/python3.6/site-packages/numpy/core/include -L$(ANACONDA3)/lib
+FLAGS:=$(shell $(ANACONDA3)/bin/python3-config --cflags --ldflags) -I$(ANACONDA3)/lib/python3.5/site-packages/numpy/core/include -L$(ANACONDA3)/lib
 
-LINK:=DYLD_INSERT_LIBRARIES=$(ANACONDA3)/lib/libpython3.6m.dylib:$(ANACONDA3)//lib/libmkl_intel_thread.dylib:$(ANACONDA3)/lib/libiomp5.dylib:$(ANACONDA3)/lib/libmkl_core.dylib
+LINK:=DYLD_INSERT_LIBRARIES=$(ANACONDA3)/lib/libpython3.5m.dylib:$(ANACONDA3)//lib/libmkl_intel_thread.dylib:$(ANACONDA3)/lib/libiomp5.dylib:$(ANACONDA3)/lib/libmkl_core.dylib
 
 examples: minimal basic modern animation
 
